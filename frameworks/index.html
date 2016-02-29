@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>framework</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+    <script src="/frameworks/bootstrap_presets.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+</head>
+<body>
+<div class="admin row">
+<div class="col-xs-4">
+    <input id="input_path" type="text" />input0
+    <button id="button_read_path" onclick="f_read(input_path.value)">Read</button>button0
+    <br/>
+
+    <button id="button_write_to_path" onclick="f_write(input_path.value,textarea_display_content.value)">Write</button>button1
+    <br/>
+    <textarea id="textarea_display_content" cols="60" rows="10"></textarea>textarea0
+</div>
+<div class="col-xs-4" >
+    <input id="input_read_directory" type="text" />input1
+    <button id="button_read_directory" onclick="f_rdir(input_read_directory.value)">Read Dir</button>button2
+    <button id="button_up_level" onclick="f_up_level()">Up Level</button>button3
+    <button id="button_copy"><-- Copy</button>button4
+    <ul id="ul_display_files"></ul>
+</div>
+    <select id="select_category">
+    </select>
+    <select id="select_class">
+    </select>
+    <button id="button_add_class">Add</button>
+
+    <div class="col-xs-4" >
+        <ul id="ul_display_classes"></ul>
+    </div>
+</div>
+<div class="clear-fix"></div>
+<div id="output" ></div>
+<script>
+    function id_everyting() {
+        common_elements = [
+            'button',
+            'div',
+            'input',
+            'textarea',
+            'ul',
+            'select'
+        ];
+        all_elements_array = [];
+        all_ids_array = [];
+        function all_elements() {
+            for (var i = 0; i < common_elements.length; i++) {
+                var temp_array = document.getElementsByTagName(common_elements[i]);
+                for (var j = 0; j < temp_array.length; j++) {
+                    all_elements_array.push(temp_array[j]);
+                }
+            }
+        }
+
+        function all_ids() {
+            for (var i = 0; i < all_elements_array.length; i++) {
+                if (all_elements_array[i].hasAttribute('id')) {
+                    all_ids_array.push(all_elements_array[i]);
+                }
+            }
+        }
+
+        function dgebid(eid) {
+            window[eid] = document.getElementById(eid);
+        }
+
+        function var_all() {
+            for (var i = 0; i < all_ids_array.length; i++) {
+                dgebid(all_ids_array[i]);
+            }
+        }
+
+        all_elements();
+        all_ids();
+        var_all();
+    }//id everything;
+    id_everyting();
+
+
+    input=document.getElementsByTagName('input');
+    button=document.getElementsByTagName('button');
+    textarea=document.getElementsByTagName('textarea');
+    ul=document.getElementsByTagName('ul');
+    output = document.getElementById('output');
+    select=document.getElementsByTagName('select');
+    socket = io.connect();
+
+
+    socket.on('connected',function(){
+
+        console.log('connected to server');
+    });
+    function f_read(v_path){
+        socket.emit('read_request',v_path);
+    }
+    function f_write(v_path,v_content){
+       var  string = v_path;
+        string = string.split('/');
+        if (string[string.length-1].indexOf('.')>-1){
+            string.pop();
+        }
+        input_read_directory.value = '';
+        if (string[string.length-1]== ''){
+            string.pop();
+        }
+
+        for (var i=0;i<string.length;i++){
+            input_read_directory.value += string[i]+'/';
+        }
+
+        var v_data = {path:v_path,content:v_content};
+        v_data = JSON.stringify(v_data);
+        console.log('f_write');
+        socket.emit('write_request',v_data);
+        button_read_path.click();
+    }
+    function f_rdir(v_path){
+        socket.emit('f_readdir',v_path)
+    }
+    function f_up_level(){
+
+        var string = input_read_directory.value.split('/');
+
+        input_read_directory.value = '';
+        if (string[string.length-1]== ''){
+            string.pop();
+        }
+        string.pop();
+        for (var i=0;i<string.length;i++){
+            input_read_directory.value += string[i] +'/';
+        }
+        button_read_directory.click();
+    }
+    socket.on('read_request',function(info){
+        textarea_display_content.value = info;
+        output.innerHTML = info;
+    });
+    socket.on('message',function(data){
+        console.log(data);
+    });
+    socket.on('f_readdir',function(data){
+        ul_display_files.innerHTML = '';
+        for (var i=0;i<data.length;i++){
+            if (data[i]=='.idea'){
+                i++;
+            }
+            temp_li = document.createElement('li');
+            ul_display_files.appendChild(temp_li);
+            temp_li.innerHTML = data[i];
+            if (data[i].indexOf('.')>-1){
+                temp_li.classList.add('file');
+            }else{
+                temp_li.classList.add('folder');
+            }
+            temp_li.onclick = function(){
+                if (this.innerHTML.indexOf('.')>-1){
+                    input_path.value = input_read_directory.value + this.innerHTML;
+                    button_read_path.click();
+                }else{
+                    input_read_directory.value += this.innerHTML+'/';
+                    button_read_directory.click();
+                }
+            }
+        }
+    });
+
+
+
+document.addEventListener('DOMContentLoaded',function(){
+    button_read_directory.click();
+});
+
+    output.addEventListener('click',function(event){
+        console.log(event.target);
+        target=event.target;
+        ul_display_classes.innerHTML ='';
+        for (i=0;i<target.classList.length;i++){
+            var temp_li=document.createElement('li');
+            ul_display_classes.appendChild(temp_li);
+            temp_li.innerHTML = target.classList[i];
+            temp_li.addEventListener('contextmenu',function(event){
+                event.preventDefault();
+                console.log('yes');
+                target.classList.remove(this.innerHTML);
+                textarea_display_content.value = output.innerHTML;
+                this.remove();
+                return false;
+            },false);
+            temp_li.addEventListener('click',function(event){
+                target.classList.remove(this.innerHTML);
+                this.innerHTML=prompt('class');
+                target.classList.add(this.innerHTML);
+                textarea_display_content.value = output.innerHTML;
+            });
+
+        }
+
+    });
+
+    document.addEventListener('DOMContentLoaded',function(){
+        select_category.innerHTML='';
+        for (i=0;i<Object.keys(classes).length;i++){
+            var temp_option = document.createElement('option');
+            select_category.appendChild(temp_option);
+            temp_option.innerHTML = Object.keys(classes)[i];
+            temp_option.value = Object.keys(classes)[i];
+        }
+    });
+    select_category.addEventListener('change',function(){
+        select_class.innerHTML ='';
+        for (i=0;i<c[select_category.value].length;i++){
+            var temp_option = document.createElement('option');
+            select_class.appendChild(temp_option);
+            temp_option.innerHTML = c[select_category.value][i];
+            temp_option.value = c[select_category.value][i];
+
+        }
+    });
+    button_add_class.addEventListener('click',function(){
+        if (target==undefined){
+            return;
+        }
+        target.classList.add(select_class.value);
+
+        textarea_display_content.value = output.innerHTML;
+        button_read_path.click();
+        target.click();
+    });
+
+    function textbox()
+    {
+        var startPos = textarea_display_content.selectionStart;
+        var endPos = textarea_display_content.selectionEnd;
+        console.log(startPos + ", " + endPos);
+        return startPos;
+    }
+   function add_element_text(curenttext,element,position){
+       var output = [curenttext.slice(0, position), element, curenttext.slice(position)].join('');
+       return output;
+   }
+</script>
+</body>
+</html>

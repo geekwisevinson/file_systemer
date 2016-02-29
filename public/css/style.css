@@ -1,0 +1,29 @@
+.admin{
+    background-color: grey;
+    display: block;
+
+}
+
+.admin .folder{
+    background-color: yellow;
+
+}
+
+.admin .file{
+    background-color: green;
+}
+
+. admin ul{
+    list-style: none;
+}
+.admin li{
+    text-align: center;
+    display: inline-block;
+    border: 1px solid black;
+    margin: 5px;
+    padding:5px;
+}
+
+.panel li{
+
+}

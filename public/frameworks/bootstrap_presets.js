@@ -1,0 +1,24 @@
+classes={};
+c=classes;
+c.buttons=[
+    'btn',
+    'btn-default',
+    'btn-primary',
+    'btn-success',
+    'btn-info',
+    'btn-warning',
+    'btn-danger',
+    'btn-link',
+    'btn-lg',
+    'btn-sm',
+    'btn-xs',
+    'btn-block',
+    'active',
+    'disabled'
+];
+c.colums=[
+    'col-xs-1',
+    'col-xs-2',
+    'col-xs-3'
+];
+
